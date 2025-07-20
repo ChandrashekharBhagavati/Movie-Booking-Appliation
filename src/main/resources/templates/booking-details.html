@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Booking Details</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+  <style>
+    body {
+      background-color: #f8f9fa;
+    }
+
+    .booking-card {
+      max-width: 600px;
+      margin: 50px auto;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .booking-card .card-header {
+      font-size: 1.5rem;
+      font-weight: 600;
+      background-color: #343a40;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .payment-toggle-container {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 400;
+      font-size: 0.9rem;
+    }
+
+    .info-icon {
+      cursor: pointer;
+      border-radius: 50%;
+      background: #0d6efd;
+      color: white;
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .booking-info label {
+      font-weight: 500;
+    }
+
+    .price-info {
+      margin-top: 10px;
+      font-weight: 600;
+      font-size: 1.1rem;
+      color: #198754; /* Bootstrap green */
+    }
+
+    .proceed-btn {
+      width: 100%;
+      padding: 12px;
+      font-size: 1.1rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card booking-card">
+    <div class="card-header">
+      <span>🎫 Booking Summary</span>
+
+      <div class="payment-toggle-container">
+        <label for="paymentToggle" class="mb-0" style="color: #ddd;">Payment</label>
+        <input class="form-check-input" type="checkbox" id="paymentToggle"/>
+        <div
+          class="info-icon"
+          data-bs-toggle="tooltip"
+          data-bs-placement="bottom"
+          title="Toggle payment ON to proceed with payment; OFF to skip payment and confirm booking only."
+        >
+          i
+        </div>
+      </div>
+    </div>
+    <div class="card-body booking-info">
+      <p><label>Movie:</label> <span id="movieTitle"></span></p>
+      <p><label>Date:</label> <span id="bookingDate"></span></p>
+      <p><label>Time:</label> <span id="bookingTime"></span></p>
+      <p><label>Seats:</label> <span id="bookingSeats"></span></p>
+
+      <div id="priceInfo" class="price-info"></div>
+
+      <button id="actionBtn" class="btn btn-primary proceed-btn mt-4">Proceed to Payment</button>
+    </div>
+  </div>
+<!-- Status Modal -->
+<div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content rounded-4">
+      <div class="modal-header">
+        <h5 class="modal-title" id="statusModalLabel">Status</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="statusModalBody">
+        <!-- Message injected by JS -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="statusModalCloseBtn" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+function getQueryParam(param) {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get(param);
+}
+
+const movieId = getQueryParam('movieId');
+const movieName = getQueryParam('movieName') || 'Unknown Movie';
+const date = getQueryParam('date');
+const time = getQueryParam('time');
+const seats = getQueryParam('seats') || "";
+
+document.getElementById('movieTitle').textContent = movieName;
+document.getElementById('bookingDate').textContent = date;
+document.getElementById('bookingTime').textContent = time;
+document.getElementById('bookingSeats').textContent = seats;
+
+const paymentToggle = document.getElementById('paymentToggle');
+const priceInfo = document.getElementById('priceInfo');
+const actionBtn = document.getElementById('actionBtn');
+
+const pricePerTicket = 25;
+
+function updateUI() {
+  const seatCount = seats ? seats.split(",").length : 0;
+
+  if (seatCount === 0) {
+    actionBtn.disabled = true;
+    priceInfo.textContent = "No seats selected.";
+    return;
+  } else {
+    actionBtn.disabled = false;
+  }
+
+  if (paymentToggle.checked) {
+    // Payment ON
+    const totalPrice = seatCount * pricePerTicket;
+    priceInfo.textContent = `Price per ticket: ₹${pricePerTicket} | Total: ₹${totalPrice}`;
+    actionBtn.textContent = "Proceed to Payment";
+    actionBtn.classList.remove("btn-success");
+    actionBtn.classList.add("btn-primary");
+  } else {
+    // Payment OFF
+    priceInfo.textContent = "";
+    actionBtn.textContent = "Confirm";
+    actionBtn.classList.remove("btn-primary");
+    actionBtn.classList.add("btn-success");
+  }
+}
+
+paymentToggle.addEventListener('change', updateUI);
+
+actionBtn.addEventListener('click', async () => {
+  actionBtn.disabled = true;  // disable to prevent double click
+  actionBtn.textContent = "Processing...";
+
+  const bookingData = {
+    movieId: movieId,
+    date: date,
+    time: time,
+    seats: seats ? seats.split(",") : [],
+    paymentMode: paymentToggle.checked
+  };
+
+  try {
+    const response = await fetch('/api/bookings', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(bookingData)
+    });
+
+    if (response.ok) {
+      showStatusModal("✅ Booking confirmed! Redirecting to home...", {
+        autoCloseAfter: 3000,
+        redirectTo: "/home"
+      });
+    } else if (response.status === 401) {
+      showStatusModal("⚠️ You must be logged in to book. Redirecting to login...", {
+        autoCloseAfter: 3000,
+        redirectTo: "/login"
+      });
+    } else {
+      const errorText = await response.text();
+      showStatusModal("❌ Failed to confirm booking:<br><small>" + errorText + "</small>");
+      actionBtn.disabled = false;
+      updateUI();
+    }
+
+  } catch (error) {
+    showStatusModal("🚫 Error connecting to server:<br><small>" + error.message + "</small>");
+    actionBtn.disabled = false;
+    updateUI();
+  }
+});
+
+
+// Initialize tooltip and UI on load
+document.addEventListener('DOMContentLoaded', () => {
+  const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+  tooltipTriggerList.map(el => new bootstrap.Tooltip(el));
+  updateUI();
+});
+// Modal helper function
+function showStatusModal(message, options = {}) {
+  document.getElementById("statusModalBody").innerHTML = message;
+  const modal = new bootstrap.Modal(document.getElementById("statusModal"));
+  modal.show();
+
+  // Optional auto-close and redirect
+  if (options.autoCloseAfter) {
+    setTimeout(() => {
+      modal.hide();
+      if (options.redirectTo) {
+        window.location.href = options.redirectTo;
+      }
+    }, options.autoCloseAfter);
+  }
+
+  // Optional redirect on close
+  const closeBtn = document.getElementById("statusModalCloseBtn");
+  closeBtn.onclick = () => {
+    if (options.redirectTo) {
+      window.location.href = options.redirectTo;
+    }
+  };
+}
+
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Signup</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    body {
+      background-color: #f8f9fa;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .signup-card {
+      background: white;
+      padding: 2rem 2.5rem;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 450px;
+    }
+
+    .signup-card h2 {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      font-weight: 600;
+      color: #343a40;
+    }
+
+    button.btn-primary {
+      width: 100%;
+      font-size: 1.1rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="signup-card">
+    <h2>Create an Account</h2>
+    <form id="signupForm" novalidate>
+      <div class="mb-3">
+        <label for="firstName" class="form-label">First Name</label>
+        <input
+          type="text"
+          class="form-control"
+          id="firstName"
+          name="firstName"
+          required
+          autocomplete="given-name"
+          placeholder="Enter your first name"
+        />
+      </div>
+
+      <div class="mb-3">
+        <label for="lastName" class="form-label">Last Name</label>
+        <input
+          type="text"
+          class="form-control"
+          id="lastName"
+          name="lastName"
+          required
+          autocomplete="family-name"
+          placeholder="Enter your last name"
+        />
+      </div>
+
+      <div class="mb-3">
+        <label for="email" class="form-label">Email address</label>
+        <input
+          type="email"
+          class="form-control"
+          id="email"
+          name="email"
+          required
+          autocomplete="email"
+          placeholder="you@example.com"
+        />
+      </div>
+
+      <div class="mb-3">
+        <label for="password" class="form-label">Password</label>
+        <input
+          type="password"
+          class="form-control"
+          id="password"
+          name="password"
+          required
+          autocomplete="new-password"
+          placeholder="At least 6 characters"
+        />
+      </div>
+
+      <button type="submit" class="btn btn-primary">Sign Up</button>
+    </form>
+  </div>
+
+  <script>
+    document.getElementById('signupForm').addEventListener('submit', async function(event) {
+      event.preventDefault();
+
+      const firstName = document.getElementById('firstName').value.trim();
+      const lastName = document.getElementById('lastName').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+
+      let errorMsg = "";
+
+      if (!firstName) errorMsg += "First name is required.\n";
+      if (!lastName) errorMsg += "Last name is required.\n";
+
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[a-z]{2,3}$/;
+      if (!emailPattern.test(email)) errorMsg += "Invalid email format.\n";
+
+      if (password.length < 6) errorMsg += "Password must be at least 6 characters.\n";
+
+      if (errorMsg) {
+        alert(errorMsg);
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ firstName, lastName, email, password }),
+        });
+
+        if (response.ok) {
+          alert('Signup successful!');
+          window.location.href = '/login';
+        } else {
+          const error = await response.text();
+          alert('Signup failed: ' + error);
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Something went wrong. Please try again.');
+      }
+    });
+  </script>
+
+</body>
+</html>

@@ -28,6 +28,9 @@ public class Booking {
     private LocalTime time;
 
     @ElementCollection
+    @CollectionTable(name = "booking_seats", joinColumns = @JoinColumn(name = "booking_id"))
+    @OrderColumn(name = "seat_order")
+    @Column(name = "seat_number")
     private List<String> seats;
 
     private boolean paymentMode;

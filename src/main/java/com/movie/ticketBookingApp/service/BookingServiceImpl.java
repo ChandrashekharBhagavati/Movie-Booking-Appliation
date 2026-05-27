@@ -5,17 +5,15 @@ import com.movie.ticketBookingApp.entity.Booking;
 import com.movie.ticketBookingApp.entity.Seat;
 import com.movie.ticketBookingApp.repository.BookingRepository;
 import com.movie.ticketBookingApp.repository.SeatRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
+import java.util.*;
+
 
 @Service
 public class BookingServiceImpl implements BookingService {
@@ -28,17 +26,16 @@ public class BookingServiceImpl implements BookingService {
         this.seatRepository = seatRepository;
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     @Override
     public Booking createBooking(BookingRequest request, Long userId) {
+        // 1. Init booking
         Booking booking = new Booking();
         booking.setMovieId(request.movieId);
         booking.setDate(LocalDate.parse(request.date));
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH);
-        String timeStr = request.time.trim().toUpperCase();
-        LocalTime parsedTime = LocalTime.parse(timeStr, formatter);
-        LocalDate parsedDate = LocalDate.parse(request.date);
+        LocalTime parsedTime = LocalTime.parse(request.time.trim().toUpperCase(), formatter);
 
         booking.setTime(parsedTime);
         booking.setSeats(request.seats);
@@ -49,15 +46,13 @@ public class BookingServiceImpl implements BookingService {
         int pricePerTicket = 25;
         booking.setTotalAmount(request.paymentMode ? pricePerTicket * request.seats.size() : 0);
 
-        // ✅ Fetch & lock selected seats
+        // 2. Fetch & lock seats
+        LocalDate parsedDate = LocalDate.parse(request.date);
         List<Seat> selectedSeats = seatRepository.findSeatsForUpdate(
-                request.movieId,
-                parsedDate,
-                parsedTime,
-                request.seats
+                request.movieId, parsedDate, parsedTime, request.seats
         );
 
-        // ✅ Validate and book
+        // 3. Validate seats
         for (Seat seat : selectedSeats) {
             if (seat.isBooked()) {
                 throw new IllegalStateException("Seat already booked: " + seat.getSeatNumber());
@@ -65,12 +60,15 @@ public class BookingServiceImpl implements BookingService {
             seat.setBooked(true);
         }
 
-        // ✅ Save booked seats
+        // 4. Save booking first
+        Booking savedBooking = repo.save(booking);
+
+        // 5. Save updated seats
         seatRepository.saveAll(selectedSeats);
 
-        // ✅ Save booking info
-        return repo.save(booking);
+        return savedBooking;
     }
+
 
 
     @Override

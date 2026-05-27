@@ -23,12 +23,12 @@ public class AiController {
     public ResponseEntity<String> getAiOverview(@RequestParam String movieName) {
         System.out.println("movieName ..." + movieName);
         // Your static prompt remains the same
-        String prompt = "Give a short movie overview for the film: " + movieName;
+        String prompt = "Give me a spoiler-free explanation of the movie. If it’s part of a series, summarize what the audience needs to know before watching this installment, but don’t reveal any plot twists or endings" + movieName;
         try {
             String response = geminiService.ask(prompt); // Call the new service method
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            e.printStackTrace(); // Log the exception for debugging
+     // Log the exception for debugging
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("AI failed to fetch info: " + e.getMessage()); // Provide more detail in error
         }

@@ -11,7 +11,7 @@
 	<groupId>com.movie</groupId>
 	<artifactId>TicketBookingApplication</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>TicketBookingApplication</name>
+	<name>Seatflix</name>
 	<description>Demo project for Spring Boot</description>
 	<url/>
 	<licenses>

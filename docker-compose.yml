@@ -1,0 +1,35 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: ticket-booking-mysql
+    environment:
+      MYSQL_DATABASE: ticket_booking_db
+      MYSQL_USER: ticket_user
+      MYSQL_PASSWORD: ticket_pass
+      MYSQL_ROOT_PASSWORD: root_pass
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    container_name: ticket-booking-app
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: jdbc:mysql://mysql:3306/ticket_booking_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      DB_USERNAME: ticket_user
+      DB_PASSWORD: ticket_pass
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    ports:
+      - "8081:8080"
+
+volumes:
+  mysql-data:

@@ -23,7 +23,7 @@ public class BookingController {
         this.service = service;
     }
 
-    @PostMapping("/api/bookings")
+        @PostMapping("/api/bookings")
     public ResponseEntity<?> handleBooking(@RequestBody BookingRequest request, HttpSession session) {
         Long userId = (Long) session.getAttribute("userId");
         if (userId == null) {

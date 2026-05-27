@@ -65,33 +65,59 @@
           autocomplete="current-password"
         />
       </div>
-      <button type="submit" class="btn btn-primary w-100">Login</button>
+      <button type="submit" id="loginBtn" class="btn btn-primary w-100">
+  Login
+</button>
+
       <div id="loginError" class="text-danger mt-2"></div>
     </form>
   </div>
 
   <script>
-    document.getElementById('loginForm').addEventListener('submit', async function(e) {
-      e.preventDefault();
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value.trim();
-      
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password ,})
-      });
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
 
-      const result = await response.text();
+  const loginBtn = document.getElementById('loginBtn');
+  const loginError = document.getElementById('loginError');
+  
+  // Reset error
+  loginError.textContent = '';
 
-      if (response.ok) {
-        // ✅ Success: redirect to home
-        window.location.href = "/home";
-      } else {
-        // ❌ Error
-        document.getElementById('loginError').textContent = result;
-      }
+  // Show loader in button
+  loginBtn.disabled = true;
+  loginBtn.innerHTML = `
+    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+    Logging in...
+  `;
+
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value.trim();
+  
+  try {
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
     });
+
+    const result = await response.text();
+
+    if (response.ok) {
+      // ✅ Success: redirect to home
+      window.location.href = "/home";
+    } else {
+      // ❌ Error: show message
+      loginError.textContent = result;
+      loginBtn.disabled = false;
+      loginBtn.innerHTML = "Login"; // restore
+    }
+  } catch (error) {
+    loginError.textContent = "⚠️ Network error. Please try again.";
+    loginBtn.disabled = false;
+    loginBtn.innerHTML = "Login"; // restore
+  }
+});
+
   </script>
 
 </body>

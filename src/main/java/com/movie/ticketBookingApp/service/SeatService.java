@@ -49,4 +49,128 @@ public class SeatService {
 
         return seats;
     }
+    public List<String> recommendSeats(
+            Long movieId,
+            LocalDate date,
+            LocalTime time,
+            int count
+    ) {
+
+        List<Seat> seats =
+                getOrCreateSeats(movieId, date, time);
+
+        List<List<Seat>> possibleGroups =
+                new ArrayList<>();
+
+        // Preferred row order
+        char[] preferredRows =
+                {'D', 'E', 'C', 'F', 'B', 'G', 'A', 'H'};
+
+        for (char row : preferredRows) {
+
+            List<Seat> rowSeats = seats.stream()
+
+                    .filter(seat ->
+                            seat.getSeatNumber().charAt(0) == row
+                    )
+
+                    .sorted((s1, s2) -> {
+
+                        int col1 = Integer.parseInt(
+                                s1.getSeatNumber().substring(1)
+                        );
+
+                        int col2 = Integer.parseInt(
+                                s2.getSeatNumber().substring(1)
+                        );
+
+                        return Integer.compare(col1, col2);
+                    })
+
+                    .toList();
+
+            for (int i = 0; i <= rowSeats.size() - count; i++) {
+
+                List<Seat> group =
+                        rowSeats.subList(i, i + count);
+
+                boolean allAvailable = group.stream()
+
+                        .allMatch(seat -> !seat.isBooked());
+
+                if (allAvailable) {
+                    possibleGroups.add(group);
+                }
+            }
+        }
+
+        if (possibleGroups.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<Seat> bestGroup = null;
+
+        double bestScore = -9999;
+
+        for (List<Seat> group : possibleGroups) {
+
+            double score = calculateSeatScore(group);
+
+            if (score > bestScore) {
+
+                bestScore = score;
+
+                bestGroup = group;
+            }
+        }
+
+        return bestGroup.stream()
+                .map(Seat::getSeatNumber)
+                .toList();
+    }
+    private double calculateSeatScore(
+            List<Seat> group
+    ) {
+
+        double score = 0;
+
+        for (Seat seat : group) {
+
+            String seatNumber =
+                    seat.getSeatNumber();
+
+            char row =
+                    seatNumber.charAt(0);
+
+            int col =
+                    Integer.parseInt(
+                            seatNumber.substring(1)
+                    );
+
+        /*
+            Horizontal center preference
+            Center seats: 4,5
+        */
+
+            score -= Math.abs(col - 4.5) * 10;
+
+        /*
+            Vertical preference
+            Middle rows preferred
+        */
+
+            score += switch (row) {
+
+                case 'D', 'E' -> 40;
+
+                case 'C', 'F' -> 30;
+
+                case 'B', 'G' -> 20;
+
+                default -> 10;
+            };
+        }
+
+        return score;
+    }
 }

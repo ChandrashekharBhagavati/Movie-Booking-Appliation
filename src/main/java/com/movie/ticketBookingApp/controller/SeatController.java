@@ -33,4 +33,28 @@ public class SeatController {
 
         return seatService.getOrCreateSeats(movieId, parsedDate, parsedTime);
     }
+
+    @GetMapping("/recommend")
+    public List<String> recommendSeats(
+            @RequestParam Long movieId,
+            @RequestParam String date,
+            @RequestParam String time,
+            @RequestParam int count
+    ) {
+
+        LocalDate parsedDate = LocalDate.parse(date);
+
+        DateTimeFormatter formatter =
+                DateTimeFormatter.ofPattern("h:mm a");
+
+        LocalTime parsedTime =
+                LocalTime.parse(time, formatter);
+
+        return seatService.recommendSeats(
+                movieId,
+                parsedDate,
+                parsedTime,
+                count
+        );
+    }
 }
